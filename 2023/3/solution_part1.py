@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 def is_number(char: str) -> bool:
     return char in [
+        "0",
         "1",
         "2",
         "3",
@@ -15,11 +16,15 @@ def is_number(char: str) -> bool:
     ]
 
 
+def is_end_of_line(char: str) -> bool:
+    return char == "\n"
+
+
 def is_symbol(char: str) -> bool:
-    return not (is_number(char) or char == ".")
+    return not (is_number(char) or char == "." or is_end_of_line(char))
 
 
-def main(test: bool = True):
+def main(test: bool = False):
     filename = "test_input.txt" if test else "real_input.txt"
     with open(filename, "r") as f:
         all_lines = f.readlines()
