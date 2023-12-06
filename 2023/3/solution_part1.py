@@ -19,27 +19,46 @@ def is_symbol(char: str) -> bool:
     return not (is_number(char) or char == ".")
 
 
-@dataclass
-class Coordinate:
-    line_index: int
-    char_index: int
-
-
 def main(test: bool = True):
     filename = "test_input.txt" if test else "real_input.txt"
     with open(filename, "r") as f:
         all_lines = f.readlines()
 
-    char_coords: list[Coordinate] = []
+    total_sum = 0
 
-    for line_index in range(len(all_lines)):
+    number_of_lines = len(all_lines)
+    for line_index in range(number_of_lines):
         this_line = all_lines[line_index]
-        for char_index in range(len(this_line)):
+        number_of_chars = len(this_line)
+        current_number = ""
+        for char_index in range(number_of_chars):
             this_char = this_line[char_index]
-            if is_symbol(this_char):
-                char_coords.append(Coordinate(line_index, char_index))
+            if is_number(this_char):
+                current_number += this_char
+            elif len(current_number) > 0:
+                # for the search, so one extra on both sides
+                start_char_index = max(char_index - len(current_number) - 1, 0)
+                end_char_index = min(char_index, number_of_chars - 1)
+                start_line_index = max(line_index - 1, 0)
+                end_line_index = min(line_index + 1, number_of_lines - 1)
 
-    print(char_coords)
+                include = False
+                for search_line_index in range(start_line_index, end_line_index + 1):
+                    search_line = all_lines[search_line_index]
+                    for search_char_index in range(
+                        start_char_index, end_char_index + 1
+                    ):
+                        search_char = search_line[search_char_index]
+                        if is_symbol(search_char):
+                            include = True
+
+                if include:
+                    total_sum += int(current_number)
+                current_number = ""
+
+    print(total_sum)
+    if test:
+        assert total_sum == 4361
 
 
 if __name__ == "__main__":
