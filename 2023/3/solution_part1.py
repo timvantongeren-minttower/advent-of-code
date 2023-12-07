@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-
-
 def is_number(char: str) -> bool:
     return char in [
         "0",
@@ -50,9 +47,7 @@ def main(test: bool = False):
                 include = False
                 for search_line_index in range(start_line_index, end_line_index + 1):
                     search_line = all_lines[search_line_index]
-                    for search_char_index in range(
-                        start_char_index, end_char_index + 1
-                    ):
+                    for search_char_index in range(start_char_index, end_char_index + 1):
                         search_char = search_line[search_char_index]
                         if is_symbol(search_char):
                             include = True
