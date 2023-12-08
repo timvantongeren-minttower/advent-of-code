@@ -5,8 +5,12 @@ import shutil
 
 def handle_question(year: int, day: int):
     folder = rf".\{year}\{day}"
+    if os.path.exists(folder):
+        os.removedirs(folder)
     os.makedirs(folder)
-    shutil.copy(r".\template\*", folder)
+    template_folder = r".\template"
+    for file in os.listdir(template_folder):
+        shutil.copy(os.path.join(template_folder, file), os.path.join(folder, file))
 
 
 def parse_arguments() -> tuple[int, int]:
