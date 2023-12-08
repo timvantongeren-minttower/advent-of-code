@@ -1,8 +1,4 @@
-def main(test: bool = False):
-    filename = "test_input.txt" if test else "real_input.txt"
-    with open(filename, "r") as f:
-        all_lines = f.readlines()
-
+def get_answer(all_lines: list[str]) -> int:
     bag = {
         "red": 12,
         "green": 13,
@@ -28,11 +24,4 @@ def main(test: bool = False):
 
         if game_is_possible:
             sum_of_possible_ids += game_number
-
-    print(sum_of_possible_ids)
-    if test:
-        assert sum_of_possible_ids == 8
-
-
-if __name__ == "__main__":
-    main()
+    return sum_of_possible_ids

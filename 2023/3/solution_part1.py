@@ -21,11 +21,7 @@ def is_symbol(char: str) -> bool:
     return not (is_number(char) or char == "." or is_end_of_line(char))
 
 
-def main(test: bool = False):
-    filename = "test_input.txt" if test else "real_input.txt"
-    with open(filename, "r") as f:
-        all_lines = f.readlines()
-
+def get_answer(all_lines: list[str]) -> int:
     total_sum = 0
 
     number_of_lines = len(all_lines)
@@ -55,11 +51,4 @@ def main(test: bool = False):
                 if include:
                     total_sum += int(current_number)
                 current_number = ""
-
-    print(total_sum)
-    if test:
-        assert total_sum == 4361
-
-
-if __name__ == "__main__":
-    main()
+    return total_sum

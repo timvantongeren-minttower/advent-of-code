@@ -25,11 +25,7 @@ def is_gear(char: str) -> bool:
     return char == "*"
 
 
-def main(test: bool = False):
-    filename = "test_input.txt" if test else "real_input.txt"
-    with open(filename, "r") as f:
-        all_lines = f.readlines()
-
+def get_answer(all_lines: list[str]) -> int:
     number_of_lines = len(all_lines)
     gear_coords_to_numbers_map: dict[tuple[int, int], list[int]] = {}
     for line_index in range(number_of_lines):
@@ -65,11 +61,4 @@ def main(test: bool = False):
         the_numbers = gear_coords_to_numbers_map[coords]
         if len(the_numbers) == 2:
             the_sum += the_numbers[0] * the_numbers[1]
-
-    print(the_sum)
-    if test:
-        assert the_sum == 467835
-
-
-if __name__ == "__main__":
-    main()
+    return the_sum

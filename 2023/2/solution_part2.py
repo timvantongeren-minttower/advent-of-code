@@ -1,8 +1,4 @@
-def main(test: bool = False):
-    filename = "test_input.txt" if test else "real_input.txt"
-    with open(filename, "r") as f:
-        all_lines = f.readlines()
-
+def get_answer(all_lines: list[str]) -> int:
     sum_of_powers = 0
 
     for line in all_lines:
@@ -20,10 +16,4 @@ def main(test: bool = False):
         this_power = bag["red"] * bag["green"] * bag["blue"]
         sum_of_powers += this_power
 
-    print(sum_of_powers)
-    if test:
-        assert sum_of_powers == 2286
-
-
-if __name__ == "__main__":
-    main()
+    return sum_of_powers
