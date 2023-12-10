@@ -4,7 +4,7 @@ from importlib import import_module
 
 
 def handle_question(year: int, day: int, test: bool, part: int):
-    folder = rf".\{year}\{day}"
+    folder = os.path.join(".", str(year), str(day))
     filename = "test_input.txt" if test else "real_input.txt"
     with open(os.path.join(folder, filename), "r") as f:
         all_lines = f.readlines()

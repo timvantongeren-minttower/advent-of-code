@@ -4,11 +4,11 @@ import shutil
 
 
 def handle_question(year: int, day: int):
-    folder = rf".\{year}\{day}"
+    folder = os.path.join(".", str(year), str(day))
     if os.path.exists(folder):
         os.removedirs(folder)
     os.makedirs(folder)
-    template_folder = r".\template"
+    template_folder = os.path.join(".", "template")
     for file in os.listdir(template_folder):
         shutil.copy(os.path.join(template_folder, file), os.path.join(folder, file))
 
