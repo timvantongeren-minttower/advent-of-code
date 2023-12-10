@@ -1,103 +1,133 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
+from re import M
 from typing import Optional
 
 
-class MapNode:
-    def __init__(
-        self, name: str, input_start: int, output_start: int, range_len: int
-    ) -> None:
-        self.name = name
-        self.input_start = input_start
-        self.output_start = output_start
-        self.range_len = range_len
-        self.children: list[MapNode] = []
+@dataclass
+class Range:
+    start: int
+    len: int
 
-    def add_mapped_range(
-        self, input_start: int, mapped_start: int, range_len: int, mapped_name: str
-    ):
-        self.children.append(
-            MapNode(
-                name=mapped_name,
-                input_start=input_start,
-                output_start=mapped_start,
-                range_len=range_len,
-            )
-        )
+    @property
+    def end(self) -> int:
+        # inclusive
+        return self.start + self.len - 1
+
+    def get_first_number_also_present_in(self, other: Range) -> Optional[int]:
+        if self.start > other.end:
+            return None
+        if other.start > self.end:
+            return None
+        return max(self.start, other.start)
+
+
+@dataclass
+class MapRange:
+    source_start: int
+    destination_start: int
+    len: int
 
 
 class Mapper:
-    def __init__(self, to: str, ranges: list[tuple[int, int, int]]) -> None:
-        self.to = to
+    def __init__(self, _from: str, ranges: list[MapRange]) -> None:
+        self._from = _from
         self.ranges = ranges
 
-    def map_input(self, seed_range: tuple[int, int]) -> list[MapResult]:
-        range_start, range_length = seed_range
-        # range end is inclusive
-        range_end = range_start + range_length - 1
+    def get_input_ranges_of_output_range(
+        self, output_range: Range, sort_ranges_by_asc_output: bool
+    ) -> list[Range]:
+        input_ranges_and_smallest_output: list[tuple[Range, int]] = []
+        for map_range in self.ranges:
+            map_range_destination_end = map_range.destination_start + map_range.len - 1
 
-        new_ranges: list[MapResult] = []
-        for dest_start, map_start, map_len in self.ranges:
-            # map end is inclusive
-            map_end = map_start + map_len - 1
-            # At most we get 3 ranges
-            has_before_part = range_start < map_start
+            has_before_part = output_range.start < map_range.destination_start
             if has_before_part:
-                before_start = range_start
-                before_len = min(range_length, map_start - before_start)
-                new_ranges.append(
-                    MapResult(
-                        input_range=(before_start, before_len),
-                        output_range=(before_start, before_len),
-                    )
+                input_range = Range(
+                    output_range.start,
+                    min(
+                        map_range.destination_start - output_range.start,
+                        output_range.len,
+                    ),
                 )
+                smallest_output = output_range.start
+                input_ranges_and_smallest_output.append((input_range, smallest_output))
 
-            has_mapped_part = not (range_end < map_start or range_start > map_end)
+            has_mapped_part = not (
+                output_range.end < map_range.destination_start
+                or output_range.start > map_range_destination_end
+            )
             if has_mapped_part:
-                to_be_mapped_start = max(range_start, map_start)
-                # End is inclusive here, so length is 1 more
-                to_be_mapped_end = min(map_start + map_len, range_start + range_length)
-                to_be_mapped_len = to_be_mapped_end - to_be_mapped_start + 1
-                mapped_start = dest_start + (to_be_mapped_start - map_start)
-                mapped_len = to_be_mapped_len
-                new_ranges.append(
-                    MapResult(
-                        input_range=(to_be_mapped_start, to_be_mapped_len),
-                        output_range=(mapped_start, mapped_len),
-                    )
+                map_diff = map_range.source_start - map_range.destination_start
+                valid_output_start = max(
+                    output_range.start, map_range.destination_start
                 )
+                mapped_input_start = valid_output_start + map_diff
+                valid_output_end = min(output_range.end, map_range_destination_end)
+                valid_output_len = valid_output_end - valid_output_start + 1
+                input_range = Range(mapped_input_start, valid_output_len)
+                smallest_output = valid_output_start
+                input_ranges_and_smallest_output.append((input_range, smallest_output))
 
-            has_after_part = range_end > map_end
+            has_after_part = output_range.end > map_range_destination_end
             if has_after_part:
-                after_start = max(range_start, map_end + 1)
-                after_end = range_end
-                # end inclusive so + 1
-                after_len = after_end - after_start + 1
-                new_ranges.append(
-                    MapResult(
-                        input_range=(after_start, after_len),
-                        output_range=(after_start, after_len),
-                    )
+                input_range = Range(
+                    map_range_destination_end,
+                    min(
+                        output_range.end - map_range_destination_end,
+                        output_range.len,
+                    ),
                 )
+                smallest_output = output_range.start
+                input_ranges_and_smallest_output.append((input_range, smallest_output))
 
-        if new_ranges:
-            return new_ranges
-        else:
-            return [MapResult(input_range=seed_range, output_range=seed_range)]
+        if sort_ranges_by_asc_output:
+            input_ranges_and_smallest_output = sorted(
+                input_ranges_and_smallest_output, key=lambda t: t[1]
+            )
+        return [t[0] for t in input_ranges_and_smallest_output]
+
+    def map_input(self, i: int) -> int:
+        for map_range in self.ranges:
+            if (
+                i >= map_range.source_start
+                and i < map_range.source_start + map_range.len
+            ):
+                return map_range.destination_start + (i - map_range.source_start)
+        return i
 
 
 def recursively_follow_maps_to_location(
-    i: tuple[int, int], _from: str, all_mappers: dict[str, Mapper]
+    i: int, to: str, all_mappers: dict[str, Mapper]
 ) -> int:
-    current_mapper = all_mappers[_from]
+    current_mapper = all_mappers[to]
     result = current_mapper.map_input(i)
-    if current_mapper.to == "location":
+    if to == "location":
         return result
     else:
         return recursively_follow_maps_to_location(
-            result, current_mapper.to, all_mappers
+            result, current_mapper._from, all_mappers
         )
+
+
+def recursively_follow_maps_to_seed_ranges(
+    output_range: Range, to: str, all_mappers: dict[str, Mapper]
+) -> list[Range]:
+    current_mapper = all_mappers[to]
+    result = current_mapper.get_input_ranges_of_output_range(
+        output_range=output_range, sort_ranges_by_asc_output=True
+    )
+    if current_mapper._from == "seed":
+        return result
+    else:
+        sorted_ranges: list[Range] = []
+        for input_with_most_potential in result:
+            sorted_ranges.extend(
+                recursively_follow_maps_to_seed_ranges(
+                    input_with_most_potential, current_mapper._from, all_mappers
+                )
+            )
+        return sorted_ranges
 
 
 def get_answer(all_lines: list[str]) -> int:
@@ -107,14 +137,14 @@ def get_answer(all_lines: list[str]) -> int:
     seeds = [int(s) for s in seeds_part.split(" ")]
 
     # They're ranges now
-    seed_ranges: list[tuple[int, int]] = []
+    seed_ranges: list[Range] = []
     s, l = None, None
     for seed in seeds:
         if s is None:
             s = seed
         else:
             l = seed
-            seed_ranges.append((s, l))
+            seed_ranges.append(Range(s, l))
             s, l = None, None
 
     map_lines = all_lines[2:]
@@ -124,20 +154,20 @@ def get_answer(all_lines: list[str]) -> int:
     # 52 50 48
 
     _from, _to = None, None
-    ranges: list[tuple[int, int, int]] = []
+    ranges: list[MapRange] = []
 
-    input_to_mapper_map: dict[str, Mapper] = {}
+    output_to_mapper_map: dict[str, Mapper] = {}
 
     for line_index, line in enumerate(map_lines):
         is_last = line_index == len(map_lines) - 1
-        if line == "\n" or is_last:
+        if line == "\n":
             # end of a map
             if _from is None or _to is None:
                 raise ValueError("Expected from and to to be set")
-            input_to_mapper_map[_from] = Mapper(to=_to, ranges=ranges)
+            output_to_mapper_map[_to] = Mapper(_from=_from, ranges=ranges)
             # Reset inputs
             _from, _to = None, None
-            ranges: list[tuple[int, int, int]] = []
+            ranges: list[MapRange] = []
         elif ":" in line:
             # seed-to-soil map:
             _from, _, _to = line.split(" ")[0].split("-")[:3]
@@ -147,18 +177,60 @@ def get_answer(all_lines: list[str]) -> int:
             destination_start = int(d)
             source_start = int(s)
             range_length = int(l)
-            ranges.append((destination_start, source_start, range_length))
+            ranges.append(
+                MapRange(
+                    destination_start=destination_start,
+                    source_start=source_start,
+                    len=range_length,
+                )
+            )
+        if is_last:
+            # end of a map
+            if _from is None or _to is None:
+                raise ValueError("Expected from and to to be set")
+            output_to_mapper_map[_to] = Mapper(_from=_from, ranges=ranges)
+            # Reset inputs
+            _from, _to = None, None
+            ranges: list[MapRange] = []
 
-    seed_to_location: list[tuple[int, int]] = []
-
-    for seed in seeds:
-        location = recursively_follow_maps_to_location(
-            seed, "seed", input_to_mapper_map
-        )
-        seed_to_location.append((seed, location))
-
-    sorted_ascending_by_location = sorted(
-        seed_to_location, key=lambda t: t[1], reverse=False
+    location_mapper = output_to_mapper_map["location"]
+    sorted_location_ranges = sorted(
+        location_mapper.ranges, key=lambda t: t.destination_start
     )
-    closest_location = sorted_ascending_by_location[0][1]
-    return closest_location
+    sorted_location_ranges = [
+        Range(location_range.destination_start, location_range.len)
+        for location_range in sorted_location_ranges
+    ]
+    non_mapped_location_ranges: list[Range] = []
+    current_start = 1
+    for mapped_location in sorted_location_ranges:
+        non_mapped_location_ranges.append(
+            Range(current_start, mapped_location.start - current_start)
+        )
+        current_start = mapped_location.end + 1
+    all_locations = sorted(
+        sorted_location_ranges + non_mapped_location_ranges, key=lambda t: t.start
+    )
+
+    print(all_locations)
+
+    best_seed = None
+    for location_range in all_locations:
+        to = "location"
+        resulting_seed_ranges = recursively_follow_maps_to_seed_ranges(
+            output_range=location_range, to=to, all_mappers=output_to_mapper_map
+        )
+        for res in resulting_seed_ranges:
+            for seed_range in seed_ranges:
+                first_match = res.get_first_number_also_present_in(other=seed_range)
+                if first_match is not None:
+                    best_seed = first_match
+                    break
+            if best_seed is not None:
+                break
+        if best_seed is not None:
+            break
+
+    return recursively_follow_maps_to_location(
+        best_seed, to="location", all_mappers=output_to_mapper_map
+    )
