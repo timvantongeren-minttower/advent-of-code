@@ -1,10 +1,30 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Optional
 
 
-@dataclass
-class MapResult:
-    input_range: tuple[int, int]
-    output_range: tuple[int, int]
+class MapNode:
+    def __init__(
+        self, name: str, input_start: int, output_start: int, range_len: int
+    ) -> None:
+        self.name = name
+        self.input_start = input_start
+        self.output_start = output_start
+        self.range_len = range_len
+        self.children: list[MapNode] = []
+
+    def add_mapped_range(
+        self, input_start: int, mapped_start: int, range_len: int, mapped_name: str
+    ):
+        self.children.append(
+            MapNode(
+                name=mapped_name,
+                input_start=input_start,
+                output_start=mapped_start,
+                range_len=range_len,
+            )
+        )
 
 
 class Mapper:
