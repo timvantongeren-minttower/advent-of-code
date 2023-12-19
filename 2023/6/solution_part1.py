@@ -3,7 +3,7 @@ def get_values_from_line(line: str) -> list[int]:
     return [int(t) for t in data.split()]
 
 
-assert get_values_from_line("Time:      7  15   30")
+assert get_values_from_line("Time:      7  15   30") == [7, 15, 30]
 
 
 def get_number_of_possible_wins(time: int, distance: int) -> int:
