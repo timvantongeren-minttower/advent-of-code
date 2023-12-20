@@ -10,92 +10,47 @@ def get_cards(line: str) -> list[int]:
 
 
 def is_five_of_a_kind(hand: list[int]) -> bool:
-    joker_count = hand.count(JOKER)
-    if joker_count == 5:
-        return True
-    for card in set(hand):
-        if card == JOKER:
-            continue
-        if (hand.count(card) + joker_count) == 5:
-            return True
-    return False
+    return len(set(hand)) == 1
+
+
+assert is_five_of_a_kind([1, 1, 1, 1, 1]) == True
+assert is_five_of_a_kind([1, 1, 1, 1, 2]) == False
 
 
 def is_four_of_a_kind(hand: list[int]) -> bool:
-    joker_count = hand.count(JOKER)
-    if joker_count == 4:
-        return True
     for card in set(hand):
-        if card == JOKER:
-            continue
-        if (hand.count(card) + joker_count) >= 4:
+        if hand.count(card) == 4:
             return True
     return False
 
 
+assert is_four_of_a_kind([1, 1, 1, 1, 1]) == False
+assert is_four_of_a_kind([1, 1, 1, 1, 2]) == True
+
+
 def is_full_house(hand: list[int]) -> bool:
-    if is_four_of_a_kind(hand):
-        return False
-    joker_count = hand.count(JOKER)
-    if joker_count >= 3:
-        # 3 jokers + always makes fullhouse
-        return True
-
-    counts = []
-    for card in set(hand):
-        if card == JOKER:
-            continue
-        counts.append(hand.count(card))
-
-    sorted_counts = sorted(counts)
-    if joker_count == 2:
-        return sorted_counts in ([1, 2], [3])
-
-    if joker_count == 1:
-        # again, always 4 of kind here
-        return sorted_counts in ([1, 1, 2], [2, 2])
-
-    # 4 and 5 of kind are stronger so already covered
-    return len(set(hand)) == 2
+    return len(set(hand)) == 2 and not is_four_of_a_kind(hand)
 
 
-# This always gets caught by higher hands anyways
-# basically no fullhouse exists with 2 jokers as any fullhouse could better be 4 of a kind
+assert is_full_house([1, 1, 1, 2, 2]) == True
+assert is_full_house([1, 1, 1, 3, 2]) == False
 
 
 def is_three_of_a_kind(hand: list[int]) -> bool:
-    joker_count = hand.count(JOKER)
-    if joker_count >= 2:
-        # 2 jokers + always makes three of a kind or higher
-        return True
-
-    counts = []
+    if is_full_house(hand):
+        return False
     for card in set(hand):
-        if card == JOKER:
-            continue
-        counts.append(hand.count(card))
+        if hand.count(card) == 3:
+            return True
+    return False
 
-    if joker_count == 1:
-        return 2 in set(counts)
 
-    return 3 in set(counts)
+assert is_three_of_a_kind([1, 1, 1, 2, 2]) == False
+assert is_three_of_a_kind([1, 1, 1, 3, 2]) == True
+assert is_three_of_a_kind([1, 1, 7, 3, 2]) == False
 
 
 def is_two_pair(hand: list[int]) -> bool:
-    joker_count = hand.count(JOKER)
-    if joker_count >= 2:
-        return True
-
-    counts = []
-    for card in set(hand):
-        if card == JOKER:
-            continue
-        counts.append(hand.count(card))
-
-    sorted_counts = sorted(counts)
-    if joker_count == 1:
-        return min(counts) >= 2
-
     number_of_pairs = 0
     for card in set(hand):
         if hand.count(card) == 2:
@@ -103,9 +58,12 @@ def is_two_pair(hand: list[int]) -> bool:
     return number_of_pairs == 2
 
 
+assert is_two_pair([1, 1, 1, 2, 2]) == False
+assert is_two_pair([1, 1, 8, 2, 2]) == True
+assert is_two_pair([1, 1, 1, 3, 2]) == False
+
+
 def is_one_pair(hand: list[int]) -> bool:
-    if JOKER in hand:
-        return True
     number_of_pairs = 0
     counts = set()
     for card in set(hand):
@@ -116,10 +74,17 @@ def is_one_pair(hand: list[int]) -> bool:
     return number_of_pairs == 1 and counts == {1, 2}
 
 
+assert is_one_pair([1, 1, 1, 2, 2]) == False
+assert is_one_pair([1, 1, 8, 2, 2]) == False
+assert is_one_pair([1, 1, 8, 3, 2]) == True
+
+
 def is_high_card(hand: list[int]) -> bool:
-    if JOKER in hand:
-        return True
     return len(set(hand)) == 5
+
+
+assert is_high_card([1, 1, 8, 2, 2]) == False
+assert is_high_card([1, 9, 8, 3, 2]) == True
 
 
 def hand_a_stronger_than_hand_b(hand_a: list[int], hand_b: list[int]) -> bool:
@@ -132,11 +97,13 @@ def hand_a_stronger_than_hand_b(hand_a: list[int], hand_b: list[int]) -> bool:
         is_one_pair,
         is_high_card,
     ]:
-        if is_strongest_hand(hand_a) and not is_strongest_hand(hand_b):
+        hand_a_is_this_hand = is_strongest_hand(hand_a)
+        hand_b_is_this_hand = is_strongest_hand(hand_b)
+        if hand_a_is_this_hand and not hand_b_is_this_hand:
             return True
-        elif not is_strongest_hand(hand_a) and is_strongest_hand(hand_b):
+        elif not hand_a_is_this_hand and hand_b_is_this_hand:
             return False
-        elif not is_strongest_hand(hand_a) and not is_strongest_hand(hand_b):
+        elif not hand_a_is_this_hand and not hand_b_is_this_hand:
             # neither is the strongest hand currently
             continue
         # both are same strongest hand, go through hands left to right
@@ -147,6 +114,11 @@ def hand_a_stronger_than_hand_b(hand_a: list[int], hand_b: list[int]) -> bool:
                 return False
         raise ValueError("Getting here should be impossible")
     raise ValueError("Getting here should be impossible 2")
+
+
+assert hand_a_stronger_than_hand_b([1, 1, 1, 1, 1], [1, 2, 5, 2, 8]) == True
+assert hand_a_stronger_than_hand_b([2, 2, 2, 2, 2], [1, 1, 1, 1, 1]) == True
+assert hand_a_stronger_than_hand_b([3, 3, 3, 8, 8], [1, 1, 1, 1, 5]) == False
 
 
 @dataclass
@@ -166,6 +138,18 @@ class SortWrapper:
 
 def sort_hands(wrappers: list[SortWrapper]) -> list[SortWrapper]:
     return sorted(wrappers)
+
+
+assert hand_a_stronger_than_hand_b([1, 1, 1, 1, 1], [2, 2, 2, 2, 4])
+assert sort_hands(
+    [
+        SortWrapper([1, 1, 1, 1, 1], 5),
+        SortWrapper([2, 2, 2, 2, 4], 10),
+    ]
+) == [
+    SortWrapper([2, 2, 2, 2, 4], 10),
+    SortWrapper([1, 1, 1, 1, 1], 5),
+]
 
 
 def get_answer(all_lines: list[str]) -> int:
