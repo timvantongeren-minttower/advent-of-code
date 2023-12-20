@@ -118,6 +118,7 @@ assert generate_all_permutations([1, 1, 1, JOKER, 1]) == [
     [1, 1, 1, 2, 1],
 ]
 
+# We realized here that 1 is not a valid card, so joker would never become that....
 assert [2, 2, 2, 2, 2] in generate_all_permutations([2, 2, 2, JOKER, JOKER])
 
 
