@@ -166,6 +166,10 @@ def get_answer(all_lines: list[str]) -> int:
 
         params.append((length_before_loop, loop_length, z_indices))
 
+    # Some approach with Least Common Multiples might work,
+    # But im not figuring it out now.
+    # Computational force at least doesn't seem enough,
+    # we know from using the api that the number of steps > 100_000_000_000
     for a, b in combinations(params, 2):
         combination_ns: set[int] = []
         for z_a, z_b in product(a[2], b[2]):
